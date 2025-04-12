@@ -45,10 +45,19 @@ function Model({ url, color }: Model3DProps) {
   );
 }
 
-export default function ModelViewer({ modelPath }: { modelPath: string }) {
+export default function ModelViewer({ modelPath, initialColor = "#f1f1f1" }: { modelPath: string, initialColor?: string }) {
   const [isLoading, setIsLoading] = useState(true);
-  const [modelColor, setModelColor] = useState("#f1f1f1");
-  const { state } = useProduct();
+  const [modelColor, setModelColor] = useState(initialColor);
+  
+  // Verwende useProduct nur, wenn wir innerhalb eines ProductProvider sind
+  let productState;
+  try {
+    const { state } = useProduct();
+    productState = state;
+  } catch (error) {
+    // Falls useProduct einen Fehler wirft, ignorieren wir ihn und verwenden die Standard-Farbe
+    productState = null;
+  }
   
   // Farbzuordnung: Ordnet Shopify-Variantennamen den entsprechenden Hex-Farbcodes zu
   const colorMap: Record<string, string> = {
@@ -73,17 +82,20 @@ export default function ModelViewer({ modelPath }: { modelPath: string }) {
   
   // Sucht nach einer Farbvariante in den state-Objekten
   useEffect(() => {
+    // Wenn kein Produktstatus vorhanden ist, Standardfarbe beibehalten
+    if (!productState) return;
+    
     // Überprüfen, ob Farbe in den ausgewählten Optionen vorhanden ist (häufige Option-Namen)
     const colorOptionNames = ['color', 'farbe', 'colour'];
     
     // Suche nach einer passenden Farbvariante in den Optionen
-    for (const [key, value] of Object.entries(state)) {
+    for (const [key, value] of Object.entries(productState)) {
       if (colorOptionNames.includes(key.toLowerCase()) && colorMap[value]) {
         setModelColor(colorMap[value]);
         break;
       }
     }
-  }, [state]);
+  }, [productState]);
   
   useEffect(() => {
     // Set loading to false after a short delay to ensure component is mounted
@@ -151,25 +163,19 @@ export default function ModelViewer({ modelPath }: { modelPath: string }) {
         <Model url={modelPath} color={modelColor} />
         
         <OrbitControls 
-          enableZoom={true}
-          maxDistance={1000} 
-          minDistance={5}
-          zoomSpeed={1.5}
-          // Startposition auf die Vorderseite des Modells setzen
-          target={[0, 0, 0]}
-          // Automatische Rotation aktiviert
+          // Disable all user interactions
+          enableZoom={false}
+          enableRotate={false}
+          enablePan={false}
+          // Keep automatic rotation for presentation
           autoRotate={true}
           autoRotateSpeed={1.0}
-          // Initialer Blickwinkel (nach oben und von vorne)
-          // phi ist der Winkel von oben (0) nach unten (Math.PI)
-          // theta ist der Winkel um das Objekt herum
+          // Fixed view settings
+          target={[0, 0, 0]}
+          // Lock position
           makeDefault
         />
       </Canvas>
-      
-      <div className="absolute bottom-2 left-2 right-2 rounded bg-black/10 p-2 text-xs text-gray-700 dark:bg-white/10 dark:text-gray-300">
-        <p>Interactions: <b>Rotate</b>: Click and drag | <b>Zoom</b>: Mouse wheel or pinch | <b>Pan</b>: Right-click and drag</p>
-      </div>
     </div>
   );
 }
