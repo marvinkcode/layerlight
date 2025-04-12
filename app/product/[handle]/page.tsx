@@ -4,11 +4,11 @@ import { notFound } from 'next/navigation';
 import { GridTileImage } from 'components/grid/tile';
 import Footer from 'components/layout/footer';
 import { Gallery } from 'components/product/gallery';
+import ModelViewer from 'components/product/model-viewer';
 import { ProductProvider } from 'components/product/product-context';
 import { ProductDescription } from 'components/product/product-description';
 import { HIDDEN_PRODUCT_TAG } from 'lib/constants';
 import { getProduct, getProductRecommendations } from 'lib/shopify';
-import { Image } from 'lib/shopify/types';
 import Link from 'next/link';
 import { Suspense } from 'react';
 
@@ -53,6 +53,8 @@ export default async function ProductPage(props: { params: Promise<{ handle: str
   const params = await props.params;
   const product = await getProduct(params.handle);
 
+  console.log('ProductPage', product);
+
   if (!product) return notFound();
 
   const productJsonLd = {
@@ -88,12 +90,20 @@ export default async function ProductPage(props: { params: Promise<{ handle: str
                 <div className="relative aspect-square h-full max-h-[550px] w-full overflow-hidden" />
               }
             >
-              <Gallery
-                images={product.images.slice(0, 5).map((image: Image) => ({
-                  src: image.url,
-                  altText: image.altText
-                }))}
-              />
+              {product.handle.includes('creme') ? ( 
+                // Für Creme-Produkte zeigen wir nur das 3D-Modell
+                <div className="relative aspect-square h-full max-h-[550px] w-full">
+                  <ModelViewer modelPath="/models/creme/together.stl" />
+                </div>
+              ) : (
+                // Für alle anderen Produkte zeigen wir die normale Bildergalerie
+                <Gallery
+                  images={product.images.slice(0, 5).map((image: Image) => ({
+                    src: image.url,
+                    altText: image.altText
+                  }))}
+                />
+              )}
             </Suspense>
           </div>
 
