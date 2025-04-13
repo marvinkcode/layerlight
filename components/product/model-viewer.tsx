@@ -108,7 +108,7 @@ export default function ModelViewer({ modelPath, initialColor = "#f1f1f1" }: { m
   }
 
   return (
-    <div className="relative h-96 w-full">
+    <div className="relative h-full w-full">
       {/* Die separate Farbauswahl wurde entfernt, da die Farbe jetzt über die Produktvarianten gesteuert wird */}
       
       <Canvas 
@@ -139,7 +139,7 @@ export default function ModelViewer({ modelPath, initialColor = "#f1f1f1" }: { m
         }}
       >
         {/* Enhanced lighting for better shadow details */}
-        <color attach="background" args={["#f5f5f5"]} />
+        {/* <color attach="background" args={["#f5f5f5"]} /> */}
         <ambientLight intensity={0.5} />
         <spotLight 
           position={[10, 15, 10]} 

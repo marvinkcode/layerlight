@@ -1,12 +1,11 @@
+import Footer from '@/components/layout/footer';
 import { CartProvider } from 'components/cart/cart-context';
 import { Navbar } from 'components/layout/navbar';
-import { WelcomeToast } from 'components/welcome-toast';
 import { GeistSans } from 'geist/font/sans';
 import { getCart } from 'lib/shopify';
-import { ReactNode } from 'react';
-import { Toaster } from 'sonner';
-import './globals.css';
 import { baseUrl } from 'lib/utils';
+import { ReactNode } from 'react';
+import './globals.css';
 
 const { SITE_NAME } = process.env;
 
@@ -37,9 +36,10 @@ export default async function RootLayout({
           <Navbar />
           <main>
             {children}
-            <Toaster closeButton />
-            <WelcomeToast />
+            {/* <Toaster closeButton />
+            <WelcomeToast /> */}
           </main>
+          <Footer />
         </CartProvider>
       </body>
     </html>
