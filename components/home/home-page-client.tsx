@@ -21,40 +21,13 @@ export default function HomePageClient() {
 
   // Handle cursor movement
   useEffect(() => {
-    const handleMouseMove = (e) => {
+    const handleMouseMove = (e: { clientX: any; clientY: any; }) => {
       setCursorPosition({ x: e.clientX, y: e.clientY })
     }
 
     window.addEventListener("mousemove", handleMouseMove)
     return () => window.removeEventListener("mousemove", handleMouseMove)
   }, [])
-
-  // Handle scroll to update current section
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollPosition = window.scrollY + window.innerHeight / 2
-
-      sectionRefs.forEach((ref, index) => {
-        if (ref.current) {
-          const element = ref.current
-          const { offsetTop, offsetHeight } = element
-
-          if (scrollPosition >= offsetTop && scrollPosition < offsetTop + offsetHeight) {
-            setCurrentSection(index)
-          }
-        }
-      })
-    }
-
-    window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
-  }, [])
-
-  // Scroll to section function
-  const scrollToSection = (index) => {
-    sectionRefs[index].current.scrollIntoView({ behavior: "smooth" })
-    setIsMenuOpen(false)
-  }
 
   return (
     <div className="relative min-h-screen bg-white text-black">
@@ -99,28 +72,6 @@ export default function HomePageClient() {
             <p className="mx-auto mb-8 max-w-xl text-xl text-gray-600">
               Transforming spaces through the art of illumination
             </p>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 1 }}
-              className="flex justify-center"
-            >
-              <Button
-                className="rounded-full bg-black px-8 py-6 text-sm font-medium uppercase tracking-widest text-white"
-                onMouseEnter={() => {
-                  setIsCursorActive(true)
-                  setCursorText("discover")
-                }}
-                onMouseLeave={() => {
-                  setIsCursorActive(false)
-                  setCursorText("")
-                }}
-                onClick={() => scrollToSection(1)}
-              >
-                Discover
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </motion.div>
           </motion.div>
         </div>
 

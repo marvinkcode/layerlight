@@ -98,7 +98,7 @@ export default async function ProductPage(props: { params: Promise<{ handle: str
               ) : (
                 // Für alle anderen Produkte zeigen wir die normale Bildergalerie
                 <Gallery
-                  images={product.images.slice(0, 5).map((image: Image) => ({
+                  images={product.images.slice(0, 5).map((image: { url: string; altText: string }) => ({
                     src: image.url,
                     altText: image.altText
                   }))}
