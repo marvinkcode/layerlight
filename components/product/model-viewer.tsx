@@ -49,6 +49,11 @@ export default function ModelViewer({ modelPath, initialColor = "#f1f1f1" }: { m
   const [isLoading, setIsLoading] = useState(true);
   const [modelColor, setModelColor] = useState(initialColor);
   
+  // Aktualisiere modelColor wenn sich initialColor ändert
+  useEffect(() => {
+    setModelColor(initialColor);
+  }, [initialColor]);
+  
   // Verwende useProduct nur, wenn wir innerhalb eines ProductProvider sind
   let productState;
   try {

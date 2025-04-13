@@ -4,14 +4,105 @@ import { cn } from "@/lib/utils";
 import { Button } from '@headlessui/react';
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
-import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import ModelViewer from "../product/model-viewer";
 
+// Komponente für das farbwechselnde Modell
+function ColorChangingModel() {
+  const modelPath = "/models/creme/together.stl";
+  
+  // Array von Farben, die wir durchlaufen wollen
+  const colors = [
+    "#f1f1f1", // Weiß
+    "#1E90FF", // Blau
+    "#DC143C", // Rot
+    "#2E8B57", // Grün
+    "#FFD700", // Gold/Gelb
+    "#B87333", // Kupfer
+    "#C0C0C0", // Silber
+    "#212121", // Schwarz
+  ];
+  
+  // State für aktuelle Farbe und Zielfarbe
+  const [currentColor, setCurrentColor] = useState(colors[0]);
+  const [targetColor, setTargetColor] = useState(colors[0]);
+  const [colorIndex, setColorIndex] = useState(0);
+  const animationRef = useRef(null);
+  
+  // Funktion zur Interpolation zwischen Farben
+  const interpolateColor = (color1, color2, factor) => {
+    // Umwandlung von Hex zu RGB
+    const hex2rgb = (hex) => {
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      return [r, g, b];
+    };
+    
+    // Umwandlung von RGB zu Hex
+    const rgb2hex = (r, g, b) => {
+      return "#" + [r, g, b].map(x => {
+        const hex = Math.round(x).toString(16);
+        return hex.length === 1 ? "0" + hex : hex;
+      }).join("");
+    };
+    
+    const rgb1 = hex2rgb(color1);
+    const rgb2 = hex2rgb(color2);
+    
+    // Lineare Interpolation zwischen den Farben
+    const r = rgb1[0] + factor * (rgb2[0] - rgb1[0]);
+    const g = rgb1[1] + factor * (rgb2[1] - rgb1[1]);
+    const b = rgb1[2] + factor * (rgb2[2] - rgb1[2]);
+    
+    return rgb2hex(r, g, b);
+  };
+  
+  // Farbwechsel Effekt
+  useEffect(() => {
+    // Jede 3 Sekunden zur nächsten Farbe wechseln
+    const colorChangeInterval = setInterval(() => {
+      const nextIndex = (colorIndex + 1) % colors.length;
+      setColorIndex(nextIndex);
+      setTargetColor(colors[nextIndex]);
+    }, 3000);
+    
+    return () => clearInterval(colorChangeInterval);
+  }, [colorIndex, colors]);
+  
+  // Farbübergang Effekt
+  useEffect(() => {
+    if (currentColor === targetColor) return;
+    
+    let start = null;
+    const duration = 1000; // 1 Sekunde für den Farbübergang
+    
+    const animate = (timestamp) => {
+      if (!start) start = timestamp;
+      const elapsed = timestamp - start;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      const interpolated = interpolateColor(currentColor, targetColor, progress);
+      setCurrentColor(interpolated);
+      
+      if (progress < 1) {
+        animationRef.current = requestAnimationFrame(animate);
+      }
+    };
+    
+    animationRef.current = requestAnimationFrame(animate);
+    
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [targetColor, currentColor]);
+
+  return <ModelViewer modelPath={modelPath} initialColor={currentColor} />;
+}
+
 export default function HomePageClient() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [currentSection, setCurrentSection] = useState(0)
-  const [isVideoLoaded, setIsVideoLoaded] = useState(false)
   const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 })
   const [cursorText, setCursorText] = useState("")
   const [isCursorActive, setIsCursorActive] = useState(false)
@@ -52,10 +143,7 @@ export default function HomePageClient() {
         {/* 3D Model Background */}
         <div className="absolute inset-0 z-0 bg-gray-100">
           <div className="relative h-full w-full">
-            <ModelViewer 
-              modelPath="/models/creme/together.stl" 
-              initialColor="#f1f1f1"
-            />
+            <ColorChangingModel />
           </div>
           {/* Overlay */}
           <div className="absolute inset-0 bg-white/30" />
@@ -130,45 +218,22 @@ export default function HomePageClient() {
                 </Button> */}
               </motion.div>
 
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.8 }}
+              <div
                 className="relative aspect-square"
-                onMouseEnter={() => {
-                  setIsCursorActive(true)
-                  setCursorText("view")
-                }}
-                onMouseLeave={() => {
-                  setIsCursorActive(false)
-                  setCursorText("")
-                }}
+            
               > 
                 <div className="h-full w-full rounded-lg overflow-hidden shadow-lg">
                   <div className="h-full w-full bg-gradient-to-br from-blue-300 via-purple-400 to-indigo-600 flex items-center justify-center">
                     <div className="w-2/3 h-2/3 bg-gradient-to-tr from-transparent via-white/20 to-white/40 rounded-full transform rotate-45"></div>
                   </div>
                 </div>
-              </motion.div>
+              </div>
             </div>
 
             {/* Second product showcase */}
             <div className="grid gap-12 md:grid-cols-2 md:items-center">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.8 }}
+              <div
                 className="relative aspect-square md:order-1"
-                onMouseEnter={() => {
-                  setIsCursorActive(true)
-                  setCursorText("view")
-                }}
-                onMouseLeave={() => {
-                  setIsCursorActive(false)
-                  setCursorText("")
-                }}
               >
                 <div className="h-full w-full rounded-lg overflow-hidden shadow-lg">
                   <div className="h-full w-full bg-gradient-to-r from-pink-300 via-amber-300 to-rose-400 flex items-center justify-center">
@@ -176,7 +241,7 @@ export default function HomePageClient() {
                     <div className="absolute w-1/2 h-1/2 bg-gradient-to-tr from-yellow-200/40 to-transparent rounded-full right-12 top-12 blur-md"></div>
                   </div>
                 </div>
-              </motion.div>
+              </div>
 
               <motion.div
                 initial={{ opacity: 0, x: 50 }}
@@ -329,23 +394,17 @@ export default function HomePageClient() {
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </form>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8 }}
-              className="relative aspect-square"
-            >
-              <Image
-                src="/placeholder.svg?height=800&width=800&text=Studio"
-                alt="Our Studio"
-                width={800}
-                height={800}
-                className="h-full w-full object-cover"
-              />
-            </motion.div>
+            </motion.div>              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8 }}
+                className="relative aspect-square"
+              >
+                <div className="h-full w-full bg-gray-200 flex items-center justify-center rounded-lg">
+                  <span className="text-gray-500 text-lg">Studio Image</span>
+                </div>
+              </motion.div>
           </div>
         </div>
       </section>

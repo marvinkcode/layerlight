@@ -26,7 +26,14 @@ export default async function Page(props: { params: Promise<{ page: string }> })
   const params = await props.params;
   const page = await getPage(params.page);
 
-  // if (!page) return notFound();
+  if (!page) {
+    return (
+      <div className="py-10 text-center">
+        <h1 className="mb-4 text-3xl font-bold">Page Not Found</h1>
+        <p className="text-neutral-500">The page you are looking for doesn't exist or has been moved.</p>
+      </div>
+    );
+  }
 
   return (
     <>
