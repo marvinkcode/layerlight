@@ -25,23 +25,23 @@ function ColorChangingModel()  {
   ];
   
   // State für aktuelle Farbe und Zielfarbe
-  const [currentColor, setCurrentColor] = useState(colors[0]);
-  const [targetColor, setTargetColor] = useState(colors[0]);
+  const [currentColor, setCurrentColor] = useState<string>(colors[0] || "#f1f1f1");
+  const [targetColor, setTargetColor] = useState<string>(colors[0] || "#f1f1f1");
   const [colorIndex, setColorIndex] = useState(0);
-  const animationRef = useRef(null);
+  const animationRef = useRef<number | null>(null);
   
   // Funktion zur Interpolation zwischen Farben
-  const interpolateColor = (color1, color2, factor) => {
+  const interpolateColor = (color1: string, color2: string, factor: number) => {
     // Umwandlung von Hex zu RGB
-    const hex2rgb = (hex) => {
+    const hex2rgb = (hex: string) => {
       const r = parseInt(hex.slice(1, 3), 16);
       const g = parseInt(hex.slice(3, 5), 16);
       const b = parseInt(hex.slice(5, 7), 16);
-      return [r, g, b];
+      return [r, g, b] as [number, number, number];
     };
     
     // Umwandlung von RGB zu Hex
-    const rgb2hex = (r, g, b) => {
+    const rgb2hex = (r: number, g: number, b: number) => {
       return "#" + [r, g, b].map(x => {
         const hex = Math.round(x).toString(16);
         return hex.length === 1 ? "0" + hex : hex;
@@ -61,12 +61,12 @@ function ColorChangingModel()  {
   
   // Farbwechsel Effekt
   useEffect(() => {
-    // Jede 3 Sekunden zur nächsten Farbe wechseln
+    // Jede Sekunden zur nächsten Farbe wechseln
     const colorChangeInterval = setInterval(() => {
       const nextIndex = (colorIndex + 1) % colors.length;
       setColorIndex(nextIndex);
-      setTargetColor(colors[nextIndex]);
-    }, 3000);
+      setTargetColor(colors[nextIndex] || "#f1f1f1");
+    }, 1000);
     
     return () => clearInterval(colorChangeInterval);
   }, [colorIndex, colors]);
@@ -75,10 +75,10 @@ function ColorChangingModel()  {
   useEffect(() => {
     if (currentColor === targetColor) return;
     
-    let start = null;
+    let start: number | null = null;
     const duration = 1000; // 1 Sekunde für den Farbübergang
     
-    const animate = (timestamp) => {
+    const animate = (timestamp: number) => {
       if (!start) start = timestamp;
       const elapsed = timestamp - start;
       const progress = Math.min(elapsed / duration, 1);

@@ -102,10 +102,9 @@ export function CremeVariantGallery({
                 <GridTileImage
                   alt={`${product.title} - ${item?.colorValue}`}
                   label={{
-                    title: product.title,
-                    amount: item?.variant.price.amount,
-                    currencyCode: item?.variant.price.currencyCode,
-                    description: item?.colorValue
+                    title: `${product.title} - ${item?.colorValue || ''}`,
+                    amount: item?.variant.price.amount || '',
+                    currencyCode: item?.variant.price.currencyCode || ''
                   }}
                   src={product.featuredImage?.url}
                   fill

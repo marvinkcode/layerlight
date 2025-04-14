@@ -5,9 +5,26 @@ import { Product, ProductVariant } from 'lib/shopify/types';
 import { createUrl } from 'lib/utils';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import ModelViewer from './model-viewer';
 import { useProduct } from './product-context';
+
+// Create a separate component for using useSearchParams
+function SearchParamsWrapper({ 
+  children 
+}: { 
+  children: (params: Record<string, string>) => React.ReactNode 
+}) {
+  const searchParams = useSearchParams();
+  
+  // Create state from URL search params
+  const productState: Record<string, string> = {};
+  for (const [key, value] of searchParams.entries()) {
+    productState[key] = value;
+  }
+  
+  return <>{children(productState)}</>;
+}
 
 type VariantGalleryProps = {
   productHandle?: string;       // The product handle to fetch
@@ -77,7 +94,9 @@ export default function VariantGallery({
         }
         
         setProducts(productsArray);
-        setSelectedProduct(productsArray[0]);
+        if (productsArray[0]) {
+          setSelectedProduct(productsArray[0]);
+        }
       } catch (err) {
         console.error('Error fetching products:', err);
         setError(err instanceof Error ? err.message : 'Failed to load products');
@@ -91,22 +110,16 @@ export default function VariantGallery({
     }
   }, [productHandle, productSearch, collectionHandle, initialProduct]);
   
-  // Get search params early - Hook must not be called conditionally
-  const searchParams = useSearchParams();
-  
-  // Try to use ProductContext if available, otherwise use searchParams directly
-  let productState: Record<string, string> = {};
+  // Try to use ProductContext if available
   let productContextAvailable = false;
+  let productContextState: Record<string, string> = {};
   
   try {
     const { state } = useProduct();
-    productState = state;
+    productContextState = state;
     productContextAvailable = true;
   } catch (error) {
-    // If useProduct fails (not in a ProductProvider), create state from URL search params
-    for (const [key, value] of searchParams.entries()) {
-      productState[key] = value;
-    }
+    // ProductContext not available
   }
 
   // Show loading state
@@ -178,123 +191,139 @@ export default function VariantGallery({
     setSelectedVariant(variant);
   };
   
-  return (
-    <div className="w-full">
-      {showHeading && (
-        <h2 className="mb-6 text-2xl font-medium">Produkte aus der Kollektion</h2>
-      )}
-      
-      <div className="flex flex-col items-center gap-8">
-        {/* 3D model preview */}
-        <div className="relative aspect-square w-full max-w-lg max-h-[400px] mb-6">
-          <ModelViewer modelPath={modelPath} initialColor={modelColor} />
-        </div>
+  // Render with search params
+  const renderWithSearchParams = (searchParamsState: Record<string, string>) => {
+    // Merge context state with search params state, with context taking precedence
+    const productState = productContextAvailable 
+      ? productContextState 
+      : searchParamsState;
+    
+    return (
+      <div className="w-full">
+        {showHeading && (
+          <h2 className="mb-6 text-2xl font-medium">Produkte aus der Kollektion</h2>
+        )}
         
-        {/* Products and their variants */}
-        {products.map((product) => {
-          // Skip if product structure is invalid
-          if (!product || !product.options || !product.variants) {
-            return null;
-          }
+        <div className="flex flex-col items-center gap-8">
+          {/* 3D model preview */}
+          <div className="relative aspect-square w-full max-w-lg max-h-[400px] mb-6">
+            <ModelViewer modelPath={modelPath} initialColor={modelColor} />
+          </div>
           
-          // Get color options if they exist
-          const colorOption = product.options.find(
-            option => option.name.toLowerCase() === 'color' || 
-                     option.name.toLowerCase() === 'farbe' || 
-                     option.name.toLowerCase() === 'colour'
-          );
-          
-          // Skip if no color options
-          if (!colorOption) {
-            return null;
-          }
-          
-          // Prepare individual variants for display
-          const variantItems = colorOption.values.map(colorValue => {
-            // Find a variant that matches this color
-            const matchingVariant = product.variants.find(variant => 
-              variant.selectedOptions.some(
-                option => (option.name.toLowerCase() === 'color' || 
-                          option.name.toLowerCase() === 'farbe' || 
-                          option.name.toLowerCase() === 'colour') && 
-                          option.value === colorValue
-              )
+          {/* Products and their variants */}
+          {products.map((product) => {
+            // Skip if product structure is invalid
+            if (!product || !product.options || !product.variants) {
+              return null;
+            }
+            
+            // Get color options if they exist
+            const colorOption = product.options.find(
+              option => option.name.toLowerCase() === 'color' || 
+                       option.name.toLowerCase() === 'farbe' || 
+                       option.name.toLowerCase() === 'colour'
             );
             
-            if (!matchingVariant) return null;
+            // Skip if no color options
+            if (!colorOption) {
+              return null;
+            }
             
-            // Create URL params for this variant
-            const variantParams = matchingVariant.selectedOptions.reduce(
-              (params, option) => {
-                params[option.name.toLowerCase()] = option.value;
-                return params;
-              },
-              {} as Record<string, string>
-            );
-            
-            const variantUrl = createUrl(`/product/${product.handle}`, new URLSearchParams(variantParams));
-            
-            return {
-              variant: matchingVariant,
-              colorValue,
-              url: variantUrl,
-              colorCode: getColorCode(colorValue)
-            };
-          }).filter(Boolean);
-          
-          if (variantItems.length === 0) {
-            return null;
-          }
-          
-          // Duplicate variants to make the carousel loop and fill wide screens
-          const carouselVariants = [...variantItems, ...variantItems, ...variantItems];
-          
-          return (
-            <div key={product.id} className="w-full mb-10">
-              <h3 className="text-xl font-medium mb-4">{product.title}</h3>
+            // Prepare individual variants for display
+            const variantItems = colorOption.values.map(colorValue => {
+              // Find a variant that matches this color
+              const matchingVariant = product.variants.find(variant => 
+                variant.selectedOptions.some(
+                  option => (option.name.toLowerCase() === 'color' || 
+                            option.name.toLowerCase() === 'farbe' || 
+                            option.name.toLowerCase() === 'colour') && 
+                            option.value === colorValue
+                )
+              );
               
-              <div className="w-full overflow-x-auto pb-6 pt-1">
-                <ul className="flex animate-carousel gap-4">
-                  {carouselVariants.map((item, i) => (
-                    <li
-                      key={`${item!.variant.id}${i}`}
-                      className="relative aspect-square h-[30vh] max-h-[275px] w-2/3 max-w-[475px] flex-none md:w-1/3"
-                    >
-                      <Link
-                        href={item!.url}
-                        className="relative h-full w-full"
-                        prefetch={false}
-                        onMouseEnter={() => handleVariantHover(product, item!.variant)}
-                        onMouseLeave={() => setSelectedVariant(null)}
+              if (!matchingVariant) return null;
+              
+              // Create URL params for this variant
+              const variantParams = matchingVariant.selectedOptions.reduce(
+                (params, option) => {
+                  params[option.name.toLowerCase()] = option.value;
+                  return params;
+                },
+                {} as Record<string, string>
+              );
+              
+              const variantUrl = createUrl(`/product/${product.handle}`, new URLSearchParams(variantParams));
+              
+              return {
+                variant: matchingVariant,
+                colorValue,
+                url: variantUrl,
+                colorCode: getColorCode(colorValue)
+              };
+            }).filter(Boolean);
+            
+            if (variantItems.length === 0) {
+              return null;
+            }
+            
+            // Duplicate variants to make the carousel loop and fill wide screens
+            const carouselVariants = [...variantItems, ...variantItems, ...variantItems];
+            
+            return (
+              <div key={product.id} className="w-full mb-10">
+                <h3 className="text-xl font-medium mb-4">{product.title}</h3>
+                
+                <div className="w-full overflow-x-auto pb-6 pt-1">
+                  <ul className="flex animate-carousel gap-4">
+                    {carouselVariants.map((item, i) => (
+                      <li
+                        key={`${item!.variant.id}${i}`}
+                        className="relative aspect-square h-[30vh] max-h-[275px] w-2/3 max-w-[475px] flex-none md:w-1/3"
                       >
-                        <div 
-                          className="h-full w-full flex items-center justify-center rounded-lg border overflow-hidden"
-                          style={{ 
-                            backgroundColor: item!.colorCode,
-                            borderColor: productState[colorOption.name.toLowerCase()] === item!.colorValue 
-                              ? 'rgb(37, 99, 235)' 
-                              : 'rgb(229, 231, 235)'
-                          }}
+                        <Link
+                          href={item!.url}
+                          className="relative h-full w-full"
+                          prefetch={false}
+                          onMouseEnter={() => handleVariantHover(product, item!.variant)}
+                          onMouseLeave={() => setSelectedVariant(null)}
                         >
-                          <div className="p-4 text-center">
-                            <h3 className="font-medium mb-2">{product.title}</h3>
-                            <p className="text-sm mb-1">{item!.colorValue}</p>
-                            <Price
-                              className="text-sm"
-                              amount={item!.variant.price.amount}
-                              currencyCode={item!.variant.price.currencyCode}
-                            />
+                          <div 
+                            className="h-full w-full flex items-center justify-center rounded-lg border overflow-hidden"
+                            style={{ 
+                              backgroundColor: item!.colorCode,
+                              borderColor: productState[colorOption.name.toLowerCase()] === item!.colorValue 
+                                ? 'rgb(37, 99, 235)' 
+                                : 'rgb(229, 231, 235)'
+                            }}
+                          >
+                            <div className="p-4 text-center">
+                              <h3 className="font-medium mb-2">{product.title}</h3>
+                              <p className="text-sm mb-1">{item!.colorValue}</p>
+                              <Price
+                                className="text-sm"
+                                amount={item!.variant.price.amount}
+                                currencyCode={item!.variant.price.currencyCode}
+                              />
+                            </div>
                           </div>
-                        </div>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
-    </div>
+    );
+  };
+  
+  return (
+    <Suspense fallback={<div>Loading params...</div>}>
+      <SearchParamsWrapper>
+        {(searchParamsState) => renderWithSearchParams(searchParamsState)}
+      </SearchParamsWrapper>
+    </Suspense>
   );
 }
