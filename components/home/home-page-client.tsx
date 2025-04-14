@@ -6,9 +6,10 @@ import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import ModelViewer from "../product/model-viewer";
+import VariantGallery from "../product/variant-gallery";
 
 // Komponente für das farbwechselnde Modell
-function ColorChangingModel() {
+function ColorChangingModel()  {     
   const modelPath = "/models/creme/together.stl";
   
   // Array von Farben, die wir durchlaufen wollen
@@ -280,12 +281,13 @@ export default function HomePageClient() {
 
       {/* Experience Section - Full-screen Video */}
       <section ref={sectionRefs[2]} className="relative h-screen overflow-hidden">
-        {/* Full-screen video */}
+        {/* Full-screen background image */}
         <div className="absolute inset-0 z-0">
-          <video autoPlay muted loop playsInline className="h-full w-full object-cover">
-            <source src="/placeholder.svg?height=1080&width=1920&text=Experience" type="video/mp4" />
-            Your browser does not support the video tag.
-          </video>
+          <img 
+            src="/images/matteo-di-iorio-J0lCUcz2yoU-unsplash.jpg" 
+            alt="Experience" 
+            className="h-full w-full object-cover"
+          />
           {/* Overlay */}
           <div className="absolute inset-0 bg-black/30" />
         </div>
@@ -408,6 +410,11 @@ export default function HomePageClient() {
           </div>
         </div>
       </section>
+      <section className="relative h-screen overflow-hidden">
+      <div className="container px-4 md:px-6">
+        <VariantGallery productHandle="creme" />
+        </div>
+        </section>
     </div>
   );
 }

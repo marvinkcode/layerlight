@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 
 import { GridTileImage } from 'components/grid/tile';
 import Footer from 'components/layout/footer';
+import { CremeVariantGallery } from 'components/product/creme-variant-gallery';
 import { Gallery } from 'components/product/gallery';
 import ModelViewer from 'components/product/model-viewer';
 import { ProductProvider } from 'components/product/product-context';
@@ -113,6 +114,14 @@ export default async function ProductPage(props: { params: Promise<{ handle: str
             </Suspense>
           </div>
         </div>
+        
+        {/* Variant Gallery for Creme Collection Products */}
+        {product.handle.includes('creme') && (
+          <div className="mt-8">
+            <CremeVariantGallery product={product} />
+          </div>
+        )}
+        
         <RelatedProducts id={product.id} />
       </div>
       <Footer />

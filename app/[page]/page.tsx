@@ -9,7 +9,13 @@ export async function generateMetadata(props: {
   const params = await props.params;
   const page = await getPage(params.page);
 
-  // if (!page) return notFound();
+  // If page is null, return default metadata
+  if (!page) {
+    return {
+      title: 'Page not found',
+      description: 'The requested page could not be found.'
+    };
+  }
 
   return {
     title: page.seo?.title || page.title,
